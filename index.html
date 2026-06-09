@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance App - Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 p-8 font-sans text-gray-800">
+
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md">
+        <h1 class="text-3xl font-bold mb-8 text-indigo-600">📊 My Financial Dashboard</h1>
+
+        <!-- SECTION 1: Cashflow Forecast Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+            <div class="bg-indigo-50 p-4 rounded-xl shadow-sm border border-indigo-100">
+                <p class="text-sm text-indigo-500 font-bold uppercase tracking-wider">Starting Balance</p>
+                <h3 id="dashStart" class="text-2xl font-bold text-indigo-900 mt-1">₹0</h3>
+                <p class="text-xs text-indigo-400 mt-2">Before month starts</p>
+            </div>
+            <div class="bg-green-50 p-4 rounded-xl shadow-sm border border-green-100">
+                <p class="text-sm text-green-500 font-bold uppercase tracking-wider">Income (+)</p>
+                <h3 id="dashIncome" class="text-2xl font-bold text-green-700 mt-1">₹0</h3>
+                <p id="dashIncomeSub" class="text-xs text-green-600 mt-2">Planned: ₹0</p>
+            </div>
+            <div class="bg-red-50 p-4 rounded-xl shadow-sm border border-red-100">
+                <p class="text-sm text-red-500 font-bold uppercase tracking-wider">Expenses (-)</p>
+                <h3 id="dashExpense" class="text-2xl font-bold text-red-700 mt-1">₹0</h3>
+                <p id="dashExpenseSub" class="text-xs text-red-600 mt-2">Planned: ₹0</p>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-900">
+                <p class="text-sm text-gray-400 font-bold uppercase tracking-wider">Current Balance</p>
+                <h3 id="dashCurrent" class="text-3xl font-bold text-white mt-1">₹0</h3>
+                <p id="dashProjected" class="text-xs text-yellow-400 mt-2 font-medium">Projected End: ₹0</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border mb-10 flex flex-col md:flex-row gap-8">
+            <div class="flex-1 w-full h-72 relative">
+                <h3 class="text-center font-bold text-gray-500 mb-2">Expense Breakdown</h3>
+                <canvas id="expenseChart"></canvas>
+            </div>
+            
+            <!-- NEW: Accounts Setup Widget -->
+            <div class="w-full md:w-1/3 bg-gray-50 p-4 rounded-lg border">
+                <h3 class="font-bold text-gray-700 mb-4">🏦 Bank Accounts</h3>
+                <form id="accountForm" class="flex flex-col gap-2 mb-4">
+                    <input type="text" id="accName" placeholder="Bank Name (e.g. HDFC)" required class="border p-2 rounded text-sm">
+                    <input type="number" id="accBalance" placeholder="Start Balance (₹)" required class="border p-2 rounded text-sm">
+                    <button type="submit" class="bg-indigo-600 text-white p-2 rounded text-sm hover:bg-indigo-700">Set Account</button>
+                </form>
+                <ul id="accountList" class="space-y-2 text-sm text-gray-600"></ul>
+            </div>
+        </div>
+
+        <!-- SECTION 2: Define Your Budget -->
+        <div class="mb-8 p-5 bg-gray-50 border rounded-xl shadow-sm">
+            <h3 class="text-lg font-bold text-gray-700 mb-4">📝 Define Your Budget</h3>
+            
+            <!-- Manual Add Form -->
+            <form id="budgetForm" class="flex gap-4 mb-4">
+                <select id="budgetType" class="border p-2 rounded bg-white text-gray-700 focus:ring-indigo-400">
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                </select>
+                <input type="text" id="category" placeholder="Category (e.g. Rent, Salary)" required class="flex-1 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                <input type="number" id="amount" placeholder="Amount (₹)" required class="w-32 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 font-medium shadow-sm">Add</button>
+            </form>
+
+            <!-- CSV Upload Row -->
+            <div class="flex items-center gap-4 border-t border-gray-200 pt-4">
+                <span class="text-sm text-gray-600 font-medium">OR Bulk Upload (CSV):</span>
+                <input type="file" id="budgetCsvFile" accept=".csv" class="border p-1.5 rounded bg-white text-sm flex-1">
+                <button onclick="uploadBudgetSheet()" id="uploadBudgetBtn" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 transition font-medium text-sm shadow-sm">
+                    Upload Budget Sheet
+                </button>
+            </div>
+        </div>
+
+        <!-- SECTION 3: Budget Progress Bars -->
+        <ul id="budgetList" class="space-y-3">
+            <!-- Items injected via JS -->
+        </ul>
+
+        <!-- SECTION 4: AI Statement Sync -->
+        <div class="mt-12 border-t pt-8">
+            <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-indigo-600">🤖 AI Statement Sync</h2>
+            <button onclick="clearTransactions()" class="text-red-500 hover:text-red-700 text-sm font-semibold flex items-center gap-1 border border-red-200 px-3 py-1 rounded-md bg-red-50">
+                🗑️ Clear Synced Data
+            </button>
+        </div>
+            <div class="flex gap-4 items-center mb-6">
+                <input type="file" id="csvFile" accept=".csv" class="border p-2 rounded bg-white">
+                <button onclick="uploadStatement()" id="uploadBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+                    Analyze with AI
+                </button>
+            </div>
+            <div id="loading" class="hidden text-indigo-600 font-bold animate-pulse mb-4">
+                AI is reading your statement... Please wait (This can take 15-30 seconds)...
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left bg-white border rounded shadow-sm">
+                    <thead class="bg-indigo-50">
+                        <tr>
+                            <th class="p-3 border-b">Date</th>
+                            <th class="p-3 border-b">Clean Description</th>
+                            <th class="p-3 border-b">Type</th>
+                            <th class="p-3 border-b">Amount</th>
+                            <th class="p-3 border-b">AI Category</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionList"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    
+    <!-- ALL JAVASCRIPT -->
+    <script>
+        const API_URL = "http://127.0.0.1:8001/api";
+        let myChart = null;
+
+        // Clear all synced transactions
+        async function clearTransactions() {
+            if (!confirm("Are you sure you want to delete all synced bank transactions? (Your planned budgets will remain safe).")) return;
+            
+            try {
+                await fetch(`${API_URL}/transactions/clear`, { method: "DELETE" });
+                
+                // Clear the table UI
+                document.getElementById('transactionList').innerHTML = ""; 
+                
+                // Refresh the charts and budgets
+                fetchBudgets(); 
+                
+                alert("✅ All bank data cleared successfully!");
+            } catch (err) {
+                alert("Error clearing data: " + err.message);
+            }
+        }
+
+        // Fetch Budgets & Update Dashboard
+        async function fetchBudgets() {
+            try {
+                // Load Accounts
+                const accRes = await fetch(`${API_URL}/accounts`);
+                const accounts = await accRes.json();
+                const accList = document.getElementById("accountList");
+                accList.innerHTML = "";
+                accounts.forEach(acc => {
+                    accList.innerHTML += `<li class="flex justify-between border-b pb-1"><span>${acc.name}</span> <span class="font-bold">₹${acc.balance.toLocaleString('en-IN')}</span></li>`;
+                });
+
+                // Load Summary
+                const res = await fetch(`${API_URL}/summary`);
+                const data = await res.json();
+                
+                const list = document.getElementById("budgetList");
+                list.innerHTML = "";
+
+                const chartLabels = [];
+                const chartData = [];
+                
+                data.budgets.forEach(item => {
+                    // Only plot expenses on the pie chart
+                    if (item.type === 'expense' && item.spent > 0) {
+                        chartLabels.push(item.category);
+                        chartData.push(item.spent);
+                    }
+                    
+                    let percent = (item.spent / item.planned) * 100;
+                    if (percent > 100) percent = 100; 
+                    
+                    // Logic changes depending on if it's income or expense
+                    let isIncome = item.type === 'income';
+                    let barColor = isIncome ? 'bg-blue-500' : (percent >= 100 ? 'bg-red-500' : 'bg-green-500');
+                    let icon = isIncome ? '💵 Income' : '💸 Expense';
+
+                    const li = document.createElement("li");
+                    li.className = "bg-white p-4 rounded-lg border shadow-sm mb-3";
+                    li.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <div>
+                                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">${icon}</span>
+                                <span class="font-bold text-gray-700 text-lg">${item.category}</span>
+                            </div>
+                            <button onclick="deleteBudget(${item.id})" class="text-red-400 hover:text-red-600 text-sm">Delete</button>
+                        </div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-500">Planned: ₹${item.planned.toLocaleString('en-IN')}</span>
+                            <span class="text-gray-500">Actual: ₹${item.spent.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                            <div class="${barColor} h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                        </div>
+                    `;
+                    list.appendChild(li);
+                });
+
+                // Update New Dashboard Cards!
+                document.getElementById("dashStart").innerText = `₹${data.starting_balance.toLocaleString('en-IN')}`;
+                document.getElementById("dashIncome").innerText = `₹${data.actual_income.toLocaleString('en-IN')}`;
+                document.getElementById("dashIncomeSub").innerText = `Planned: ₹${data.planned_income.toLocaleString('en-IN')}`;
+                
+                document.getElementById("dashExpense").innerText = `₹${data.actual_expense.toLocaleString('en-IN')}`;
+                document.getElementById("dashExpenseSub").innerText = `Planned: ₹${data.planned_expense.toLocaleString('en-IN')}`;
+                
+                document.getElementById("dashCurrent").innerText = `₹${data.current_balance.toLocaleString('en-IN')}`;
+                document.getElementById("dashProjected").innerText = `Projected End: ₹${data.projected_balance.toLocaleString('en-IN')}`;
+
+                drawChart(chartLabels, chartData);
+            } catch (err) { console.error(err); }
+        }
+
+        // Handle Add Budget
+        document.getElementById("budgetForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const type = document.getElementById("budgetType").value;
+            const category = document.getElementById("category").value;
+            const amount = document.getElementById("amount").value;
+
+            await fetch(`${API_URL}/budgets`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ category, amount: parseFloat(amount), type })
+            });
+            document.getElementById("budgetForm").reset();
+            fetchBudgets();
+        });
+
+        // Handle Add Account
+        document.getElementById("accountForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const name = document.getElementById("accName").value;
+            const starting_balance = document.getElementById("accBalance").value;
+
+            await fetch(`${API_URL}/accounts`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, starting_balance: parseFloat(starting_balance) })
+            });
+            document.getElementById("accountForm").reset();
+            fetchBudgets();
+        });
+
+        
+        // Draw the Chart.js Donut
+        function drawChart(labels, data) {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#1e3a8a', '#1d4ed8', '#3b82f6', '#93c5fd', '#0f766e', '#0d9488', '#2dd4bf', '#99f6e4', '#4c1d95', '#6d28d9', '#8b5cf6', '#c4b5fd'],
+                        borderWidth: 0,
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+        }
+
+        // Upload Bulk Budget CSV
+        async function uploadBudgetSheet() {
+            const fileInput = document.getElementById('budgetCsvFile');
+            if (!fileInput.files[0]) {
+                alert("Please select your Budget CSV file first!");
+                return;
+            }
+
+            const btn = document.getElementById('uploadBudgetBtn');
+            btn.innerText = "Uploading...";
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                const res = await fetch(`${API_URL}/upload-budget`, { method: "POST", body: formData });
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.detail);
+
+                alert("✅ " + data.message);
+                document.getElementById('budgetCsvFile').value = ""; // Clear the file input
+                fetchBudgets(); // Refresh the dashboard charts instantly!
+
+            } catch (error) {
+                alert("Error uploading budget: " + error.message);
+            } finally {
+                btn.innerText = "Upload Budget Sheet";
+                btn.disabled = false;
+            }
+        }
+
+        // Add a new Budget
+        document.getElementById("budgetForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const category = document.getElementById("category").value;
+            const amount = document.getElementById("amount").value;
+
+            await fetch(`${API_URL}/budgets`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ category, amount: parseFloat(amount) })
+            });
+
+            document.getElementById("budgetForm").reset();
+            fetchBudgets();
+        });
+
+        // Delete a Budget
+        async function deleteBudget(id) {
+            await fetch(`${API_URL}/budgets/${id}`, { method: "DELETE" });
+            fetchBudgets();
+        }
+
+        // Upload Statement & Process with AI
+        async function uploadStatement() {
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files[0]) {
+                alert("Please select a CSV file first!");
+                return;
+            }
+
+            document.getElementById('loading').classList.remove('hidden');
+            const btn = document.getElementById('uploadBtn');
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                const res = await fetch(`${API_URL}/upload-statement`, { method: "POST", body: formData });
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.detail);
+
+                const tbody = document.getElementById('transactionList');
+                tbody.innerHTML = "";
+
+                const txns = data.transactions.transactions || data.transactions;
+                txns.forEach(txn => {
+                    const tr = document.createElement("tr");
+                    tr.className = "border-b hover:bg-gray-50";
+                    let typeColor = txn.type === 'credit' ? 'text-green-600' : 'text-red-600';
+                    tr.innerHTML = `
+                        <td class="p-3">${txn.date || 'N/A'}</td>
+                        <td class="p-3 font-medium">${txn.description}</td>
+                        <td class="p-3 uppercase text-xs font-bold ${typeColor}">${txn.type || 'debit'}</td>
+                        <td class="p-3 ${typeColor} font-bold">₹${txn.amount}</td>
+                        <td class="p-3">
+                            <span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-sm font-semibold">${txn.category}</span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Refresh charts and balances now that AI added new expenses!
+                fetchBudgets();
+
+            } catch (error) {
+                alert("Error processing statement: " + error.message);
+                console.error(error);
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+                btn.innerText = "Analyze with AI";
+                btn.disabled = false;
+            }
+        }
+
+        // Load dashboard on start
+        fetchBudgets();
+    </script>
+</body>
+</html>
