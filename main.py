@@ -188,7 +188,7 @@ import json
 
 # Initialize OpenAI Client (You will need an API key)
 # Get one at https://platform.openai.com/api-keys
-os.environ["OPENAI_API_KEY"] = "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" # Replace with your real key
+# os.environ["OPENAI_API_KEY"] = "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" # Replace with your real key
 client = OpenAI()
 
 @app.post("/api/upload-statement")
