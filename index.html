@@ -3,38 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance App - Dashboard</title>
-    <!-- Tailwind CSS -->
+    <title>Finance App - Secure Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-100 p-8 font-sans text-gray-800">
+<body class="bg-gray-100 font-sans text-gray-800 h-screen flex flex-col">
 
-    <div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md">
-        <h1 class="text-3xl font-bold mb-8 text-indigo-600">📊 My Financial Dashboard</h1>
+    <!-- ========================================== -->
+    <!-- LOGIN / REGISTER SCREEN (Shows if no token)-->
+    <!-- ========================================== -->
+    <div id="authScreen" class="fixed inset-0 bg-gray-100 z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-96">
+            <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">Finance OS</h1>
+            
+            <div id="loginError" class="hidden bg-red-100 text-red-600 p-2 rounded mb-4 text-sm text-center"></div>
+
+            <form id="authForm" class="flex flex-col gap-4">
+                <input type="text" id="username" placeholder="Username" required class="border p-3 rounded bg-gray-50 focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+                <input type="password" id="password" placeholder="Password" required class="border p-3 rounded bg-gray-50 focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+                
+                <button type="submit" id="loginBtn" class="bg-indigo-600 text-white font-bold py-3 rounded shadow hover:bg-indigo-700 transition">Log In</button>
+                <button type="button" onclick="registerUser()" id="registerBtn" class="bg-white text-indigo-600 border border-indigo-600 font-bold py-3 rounded shadow-sm hover:bg-indigo-50 transition">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MAIN DASHBOARD (Shows after login)         -->
+    <!-- ========================================== -->
+    <div id="mainDashboard" class="hidden max-w-5xl mx-auto p-6 w-full pb-20">
+        
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-indigo-600">📊 My Financial Dashboard</h1>
+            <button onclick="logout()" class="text-gray-500 hover:text-red-500 font-medium">Log Out</button>
+        </div>
 
         <!-- SECTION 1: Cashflow Forecast Dashboard -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
             <div class="bg-indigo-50 p-4 rounded-xl shadow-sm border border-indigo-100">
                 <p class="text-sm text-indigo-500 font-bold uppercase tracking-wider">Starting Balance</p>
                 <h3 id="dashStart" class="text-2xl font-bold text-indigo-900 mt-1">₹0</h3>
-                <p class="text-xs text-indigo-400 mt-2">Before month starts</p>
             </div>
             <div class="bg-green-50 p-4 rounded-xl shadow-sm border border-green-100">
                 <p class="text-sm text-green-500 font-bold uppercase tracking-wider">Income (+)</p>
                 <h3 id="dashIncome" class="text-2xl font-bold text-green-700 mt-1">₹0</h3>
-                <p id="dashIncomeSub" class="text-xs text-green-600 mt-2">Planned: ₹0</p>
+                <p id="dashIncomeSub" class="text-xs text-green-600 mt-1">Planned: ₹0</p>
             </div>
             <div class="bg-red-50 p-4 rounded-xl shadow-sm border border-red-100">
                 <p class="text-sm text-red-500 font-bold uppercase tracking-wider">Expenses (-)</p>
                 <h3 id="dashExpense" class="text-2xl font-bold text-red-700 mt-1">₹0</h3>
-                <p id="dashExpenseSub" class="text-xs text-red-600 mt-2">Planned: ₹0</p>
+                <p id="dashExpenseSub" class="text-xs text-red-600 mt-1">Planned: ₹0</p>
             </div>
             <div class="bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-900">
                 <p class="text-sm text-gray-400 font-bold uppercase tracking-wider">Current Balance</p>
                 <h3 id="dashCurrent" class="text-3xl font-bold text-white mt-1">₹0</h3>
-                <p id="dashProjected" class="text-xs text-yellow-400 mt-2 font-medium">Projected End: ₹0</p>
+                <p id="dashProjected" class="text-xs text-yellow-400 mt-1 font-medium">Projected End: ₹0</p>
             </div>
         </div>
 
@@ -43,8 +66,6 @@
                 <h3 class="text-center font-bold text-gray-500 mb-2">Expense Breakdown</h3>
                 <canvas id="expenseChart"></canvas>
             </div>
-            
-            <!-- NEW: Accounts Setup Widget -->
             <div class="w-full md:w-1/3 bg-gray-50 p-4 rounded-lg border">
                 <h3 class="font-bold text-gray-700 mb-4">🏦 Bank Accounts</h3>
                 <form id="accountForm" class="flex flex-col gap-2 mb-4">
@@ -56,11 +77,23 @@
             </div>
         </div>
 
+        <!-- NEW SECTION: Ask the AI Analyst (BYOD) -->
+        <div class="mb-10 bg-gradient-to-r from-indigo-900 to-purple-900 p-6 rounded-xl shadow-lg text-white">
+            <h3 class="text-xl font-bold mb-2 flex items-center gap-2">✨ AI Data Analyst</h3>
+            <p class="text-indigo-200 text-sm mb-4">Ask any question about your finances to generate a custom chart.</p>
+            <form id="askAiForm" class="flex gap-4 mb-6">
+                <input type="text" id="aiQuestion" placeholder="e.g., Show my top 5 highest expenses this month as a bar chart" required 
+                    class="flex-1 border-none p-3 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 shadow-inner">
+                <button type="submit" id="askAiBtn" class="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-400 font-bold shadow-md transition-all">Ask AI</button>
+            </form>
+            <div id="aiChartContainer" class="hidden bg-white p-4 rounded-lg shadow-inner h-72 relative">
+                <canvas id="aiCustomChart"></canvas>
+            </div>
+        </div>
+
         <!-- SECTION 2: Define Your Budget -->
         <div class="mb-8 p-5 bg-gray-50 border rounded-xl shadow-sm">
             <h3 class="text-lg font-bold text-gray-700 mb-4">📝 Define Your Budget</h3>
-            
-            <!-- Manual Add Form -->
             <form id="budgetForm" class="flex gap-4 mb-4">
                 <select id="budgetType" class="border p-2 rounded bg-white text-gray-700 focus:ring-indigo-400">
                     <option value="expense">Expense</option>
@@ -70,46 +103,34 @@
                 <input type="number" id="amount" placeholder="Amount (₹)" required class="w-32 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400">
                 <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 font-medium shadow-sm">Add</button>
             </form>
-
-            <!-- CSV Upload Row -->
             <div class="flex items-center gap-4 border-t border-gray-200 pt-4">
-                <span class="text-sm text-gray-600 font-medium">OR Bulk Upload (CSV):</span>
+                <span class="text-sm text-gray-600 font-medium">Bulk Upload Budget (CSV):</span>
                 <input type="file" id="budgetCsvFile" accept=".csv" class="border p-1.5 rounded bg-white text-sm flex-1">
-                <button onclick="uploadBudgetSheet()" id="uploadBudgetBtn" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 transition font-medium text-sm shadow-sm">
-                    Upload Budget Sheet
-                </button>
+                <button onclick="uploadBudgetSheet()" id="uploadBudgetBtn" class="bg-gray-800 text-white px-4 py-2 rounded font-medium text-sm shadow-sm">Upload Budget</button>
             </div>
         </div>
 
         <!-- SECTION 3: Budget Progress Bars -->
-        <ul id="budgetList" class="space-y-3">
-            <!-- Items injected via JS -->
-        </ul>
+        <ul id="budgetList" class="space-y-3"></ul>
 
         <!-- SECTION 4: AI Statement Sync -->
         <div class="mt-12 border-t pt-8">
             <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-indigo-600">🤖 AI Statement Sync</h2>
-            <button onclick="clearTransactions()" class="text-red-500 hover:text-red-700 text-sm font-semibold flex items-center gap-1 border border-red-200 px-3 py-1 rounded-md bg-red-50">
-                🗑️ Clear Synced Data
-            </button>
-        </div>
+                <h2 class="text-2xl font-bold text-indigo-600">🤖 AI Bank Sync</h2>
+                <button onclick="clearTransactions()" class="text-red-500 border border-red-200 px-3 py-1 rounded bg-red-50 text-sm">🗑️ Wipe Synced Data</button>
+            </div>
             <div class="flex gap-4 items-center mb-6">
                 <input type="file" id="csvFile" accept=".csv" class="border p-2 rounded bg-white">
-                <button onclick="uploadStatement()" id="uploadBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
-                    Analyze with AI
-                </button>
+                <button onclick="uploadStatement()" id="uploadBtn" class="bg-green-600 text-white px-4 py-2 rounded shadow-sm">Analyze Bank CSV</button>
             </div>
-            <div id="loading" class="hidden text-indigo-600 font-bold animate-pulse mb-4">
-                AI is reading your statement... Please wait (This can take 15-30 seconds)...
-            </div>
+            <div id="loading" class="hidden text-indigo-600 font-bold animate-pulse mb-4">AI is reading statement... Please wait (15-30 seconds)...</div>
             
-            <div class="overflow-x-auto">
-                <table class="w-full text-left bg-white border rounded shadow-sm">
+            <div class="overflow-x-auto bg-white rounded shadow-sm">
+                <table class="w-full text-left border">
                     <thead class="bg-indigo-50">
                         <tr>
                             <th class="p-3 border-b">Date</th>
-                            <th class="p-3 border-b">Clean Description</th>
+                            <th class="p-3 border-b">Description</th>
                             <th class="p-3 border-b">Type</th>
                             <th class="p-3 border-b">Amount</th>
                             <th class="p-3 border-b">AI Category</th>
@@ -119,268 +140,249 @@
                 </table>
             </div>
         </div>
-
     </div>
 
-    
     <!-- ALL JAVASCRIPT -->
     <script>
-        const API_URL = "http://127.0.0.1:8001/api";
+        const API_URL = window.location.origin + "/api";
         let myChart = null;
+        let aiCustomChart = null;
 
-        // Clear all synced transactions
-        async function clearTransactions() {
-            if (!confirm("Are you sure you want to delete all synced bank transactions? (Your planned budgets will remain safe).")) return;
-            
-            try {
-                await fetch(`${API_URL}/transactions/clear`, { method: "DELETE" });
-                
-                // Clear the table UI
-                document.getElementById('transactionList').innerHTML = ""; 
-                
-                // Refresh the charts and budgets
-                fetchBudgets(); 
-                
-                alert("✅ All bank data cleared successfully!");
-            } catch (err) {
-                alert("Error clearing data: " + err.message);
+        // --- AUTHENTICATION LOGIC ---
+        function getHeaders(isFormData = false) {
+            const token = localStorage.getItem("token");
+            const headers = { "Authorization": `Bearer ${token}` };
+            if (!isFormData) headers["Content-Type"] = "application/json";
+            return headers;
+        }
+
+        function checkAuth() {
+            if (localStorage.getItem("token")) {
+                document.getElementById("authScreen").classList.add("hidden");
+                document.getElementById("mainDashboard").classList.remove("hidden");
+                fetchBudgets();
+            } else {
+                document.getElementById("authScreen").classList.remove("hidden");
+                document.getElementById("mainDashboard").classList.add("hidden");
             }
         }
 
-        // Fetch Budgets & Update Dashboard
+        async function registerUser() {
+            const u = document.getElementById("username").value;
+            const p = document.getElementById("password").value;
+            if (!u || !p) return alert("Enter username and password!");
+            
+            try {
+                const res = await fetch(`${API_URL}/register`, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                if (res.ok) {
+                    alert("Account Created! You can now log in.");
+                } else {
+                    const data = await res.json();
+                    alert(data.detail);
+                }
+            } catch (err) { alert(err.message); }
+        }
+
+        document.getElementById("authForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const u = document.getElementById("username").value;
+            const p = document.getElementById("password").value;
+            
+            const formData = new URLSearchParams();
+            formData.append("username", u);
+            formData.append("password", p);
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: formData
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem("token", data.access_token);
+                    document.getElementById("loginError").classList.add("hidden");
+                    checkAuth();
+                } else {
+                    document.getElementById("loginError").innerText = "Invalid username or password";
+                    document.getElementById("loginError").classList.remove("hidden");
+                }
+            } catch (err) { alert(err.message); }
+        });
+
+        function logout() {
+            localStorage.removeItem("token");
+            document.getElementById("authForm").reset();
+            checkAuth();
+        }
+
+        // --- DASHBOARD LOGIC (Now heavily secured!) ---
         async function fetchBudgets() {
             try {
-                // Load Accounts
-                const accRes = await fetch(`${API_URL}/accounts`);
+                // Fetch Accounts
+                const accRes = await fetch(`${API_URL}/accounts`, { headers: getHeaders() });
+                if (accRes.status === 401) return logout(); // Token expired
+                
                 const accounts = await accRes.json();
-                const accList = document.getElementById("accountList");
-                accList.innerHTML = "";
-                accounts.forEach(acc => {
-                    accList.innerHTML += `<li class="flex justify-between border-b pb-1"><span>${acc.name}</span> <span class="font-bold">₹${acc.balance.toLocaleString('en-IN')}</span></li>`;
-                });
+                document.getElementById("accountList").innerHTML = accounts.map(a => 
+                    `<li class="flex justify-between border-b pb-1"><span>${a.name}</span> <span class="font-bold">₹${a.balance}</span></li>`
+                ).join("");
 
-                // Load Summary
-                const res = await fetch(`${API_URL}/summary`);
+                // Fetch Summary
+                const res = await fetch(`${API_URL}/summary`, { headers: getHeaders() });
                 const data = await res.json();
                 
                 const list = document.getElementById("budgetList");
                 list.innerHTML = "";
-
-                const chartLabels = [];
-                const chartData = [];
+                const chartLabels = [], chartData = [];
                 
                 data.budgets.forEach(item => {
-                    // Only plot expenses on the pie chart
                     if (item.type === 'expense' && item.spent > 0) {
                         chartLabels.push(item.category);
                         chartData.push(item.spent);
                     }
-                    
-                    let percent = (item.spent / item.planned) * 100;
-                    if (percent > 100) percent = 100; 
-                    
-                    // Logic changes depending on if it's income or expense
-                    let isIncome = item.type === 'income';
-                    let barColor = isIncome ? 'bg-blue-500' : (percent >= 100 ? 'bg-red-500' : 'bg-green-500');
-                    let icon = isIncome ? '💵 Income' : '💸 Expense';
+                    let p = Math.min((item.spent / item.planned) * 100, 100) || 0;
+                    let isInc = item.type === 'income';
+                    let barCol = isInc ? 'bg-blue-500' : (p >= 100 ? 'bg-red-500' : 'bg-green-500');
 
-                    const li = document.createElement("li");
-                    li.className = "bg-white p-4 rounded-lg border shadow-sm mb-3";
-                    li.innerHTML = `
+                    list.innerHTML += `
+                    <li class="bg-white p-4 rounded-lg border shadow-sm mb-3">
                         <div class="flex justify-between items-center mb-2">
-                            <div>
-                                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">${icon}</span>
-                                <span class="font-bold text-gray-700 text-lg">${item.category}</span>
-                            </div>
-                            <button onclick="deleteBudget(${item.id})" class="text-red-400 hover:text-red-600 text-sm">Delete</button>
+                            <span class="font-bold text-gray-700">${isInc ? '💵' : '💸'} ${item.category}</span>
+                            <button onclick="deleteBudget(${item.id})" class="text-red-400 text-sm">Delete</button>
                         </div>
-                        <div class="flex justify-between text-sm mb-2">
-                            <span class="text-gray-500">Planned: ₹${item.planned.toLocaleString('en-IN')}</span>
-                            <span class="text-gray-500">Actual: ₹${item.spent.toLocaleString('en-IN')}</span>
+                        <div class="flex justify-between text-sm mb-2 text-gray-500">
+                            <span>Plan: ₹${item.planned}</span><span>Actual: ₹${item.spent}</span>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                            <div class="${barColor} h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="${barCol} h-2 rounded-full" style="width: ${p}%"></div>
                         </div>
-                    `;
-                    list.appendChild(li);
+                    </li>`;
                 });
 
-                // Update New Dashboard Cards!
-                document.getElementById("dashStart").innerText = `₹${data.starting_balance.toLocaleString('en-IN')}`;
-                document.getElementById("dashIncome").innerText = `₹${data.actual_income.toLocaleString('en-IN')}`;
-                document.getElementById("dashIncomeSub").innerText = `Planned: ₹${data.planned_income.toLocaleString('en-IN')}`;
-                
-                document.getElementById("dashExpense").innerText = `₹${data.actual_expense.toLocaleString('en-IN')}`;
-                document.getElementById("dashExpenseSub").innerText = `Planned: ₹${data.planned_expense.toLocaleString('en-IN')}`;
-                
-                document.getElementById("dashCurrent").innerText = `₹${data.current_balance.toLocaleString('en-IN')}`;
-                document.getElementById("dashProjected").innerText = `Projected End: ₹${data.projected_balance.toLocaleString('en-IN')}`;
+                document.getElementById("dashStart").innerText = `₹${data.starting_balance}`;
+                document.getElementById("dashIncome").innerText = `₹${data.actual_income}`;
+                document.getElementById("dashIncomeSub").innerText = `Planned: ₹${data.planned_income}`;
+                document.getElementById("dashExpense").innerText = `₹${data.actual_expense}`;
+                document.getElementById("dashExpenseSub").innerText = `Planned: ₹${data.planned_expense}`;
+                document.getElementById("dashCurrent").innerText = `₹${data.current_balance}`;
+                document.getElementById("dashProjected").innerText = `Projected: ₹${data.projected_balance}`;
 
                 drawChart(chartLabels, chartData);
             } catch (err) { console.error(err); }
         }
 
-        // Handle Add Budget
+        // --- ALL ACTIONS WITH TOKENS ---
         document.getElementById("budgetForm").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const type = document.getElementById("budgetType").value;
-            const category = document.getElementById("category").value;
-            const amount = document.getElementById("amount").value;
-
             await fetch(`${API_URL}/budgets`, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ category, amount: parseFloat(amount), type })
+                method: "POST", headers: getHeaders(),
+                body: JSON.stringify({
+                    category: document.getElementById("category").value,
+                    amount: parseFloat(document.getElementById("amount").value),
+                    type: document.getElementById("budgetType").value
+                })
             });
             document.getElementById("budgetForm").reset();
             fetchBudgets();
         });
 
-        // Handle Add Account
         document.getElementById("accountForm").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const name = document.getElementById("accName").value;
-            const starting_balance = document.getElementById("accBalance").value;
-
             await fetch(`${API_URL}/accounts`, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, starting_balance: parseFloat(starting_balance) })
+                method: "POST", headers: getHeaders(),
+                body: JSON.stringify({
+                    name: document.getElementById("accName").value,
+                    starting_balance: parseFloat(document.getElementById("accBalance").value)
+                })
             });
             document.getElementById("accountForm").reset();
             fetchBudgets();
         });
 
-        
-        // Draw the Chart.js Donut
-        function drawChart(labels, data) {
-            const ctx = document.getElementById('expenseChart').getContext('2d');
-            if (myChart) myChart.destroy();
-
-            myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: ['#1e3a8a', '#1d4ed8', '#3b82f6', '#93c5fd', '#0f766e', '#0d9488', '#2dd4bf', '#99f6e4', '#4c1d95', '#6d28d9', '#8b5cf6', '#c4b5fd'],
-                        borderWidth: 0,
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
-            });
-        }
-
-        // Upload Bulk Budget CSV
         async function uploadBudgetSheet() {
-            const fileInput = document.getElementById('budgetCsvFile');
-            if (!fileInput.files[0]) {
-                alert("Please select your Budget CSV file first!");
-                return;
-            }
-
-            const btn = document.getElementById('uploadBudgetBtn');
-            btn.innerText = "Uploading...";
-            btn.disabled = true;
-
-            const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-
-            try {
-                const res = await fetch(`${API_URL}/upload-budget`, { method: "POST", body: formData });
-                const data = await res.json();
-                
-                if (!res.ok) throw new Error(data.detail);
-
-                alert("✅ " + data.message);
-                document.getElementById('budgetCsvFile').value = ""; // Clear the file input
-                fetchBudgets(); // Refresh the dashboard charts instantly!
-
-            } catch (error) {
-                alert("Error uploading budget: " + error.message);
-            } finally {
-                btn.innerText = "Upload Budget Sheet";
-                btn.disabled = false;
-            }
+            const f = document.getElementById('budgetCsvFile').files[0];
+            if (!f) return alert("Select budget CSV!");
+            document.getElementById('uploadBudgetBtn').innerText = "Uploading...";
+            
+            const fd = new FormData(); fd.append("file", f);
+            await fetch(`${API_URL}/upload-budget`, { method: "POST", headers: getHeaders(true), body: fd });
+            
+            document.getElementById('uploadBudgetBtn').innerText = "Upload Budget";
+            fetchBudgets();
         }
 
-        // Add a new Budget
-        document.getElementById("budgetForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const category = document.getElementById("category").value;
-            const amount = document.getElementById("amount").value;
+        async function uploadStatement() {
+            const f = document.getElementById('csvFile').files[0];
+            if (!f) return alert("Select Bank CSV!");
+            
+            document.getElementById('loading').classList.remove('hidden');
+            const fd = new FormData(); fd.append("file", f);
+            
+            const res = await fetch(`${API_URL}/upload-statement`, { method: "POST", headers: getHeaders(true), body: fd });
+            const data = await res.json();
+            
+            document.getElementById('loading').classList.add('hidden');
+            if (res.ok) {
+                document.getElementById('transactionList').innerHTML = data.transactions.map(t => 
+                    `<tr class="border-b"><td class="p-2">${t.date}</td><td class="p-2">${t.description}</td><td class="p-2">${t.type}</td><td class="p-2 font-bold text-${t.type=='credit'?'green':'red'}-600">₹${t.amount}</td><td class="p-2">${t.category}</td></tr>`
+                ).join("");
+                fetchBudgets();
+            } else { alert(data.detail); }
+        }
 
-            await fetch(`${API_URL}/budgets`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ category, amount: parseFloat(amount) })
+        async function clearTransactions() {
+            if(!confirm("Wipe all synced bank data?")) return;
+            await fetch(`${API_URL}/clear-data`, {
+                method: "POST", headers: getHeaders(),
+                body: JSON.stringify({transactions: true, budgets: false, accounts: false})
             });
-
-            document.getElementById("budgetForm").reset();
+            document.getElementById('transactionList').innerHTML = "";
             fetchBudgets();
+        }
+
+        async function deleteBudget(id) {
+            await fetch(`${API_URL}/budgets/${id}`, { method: "DELETE", headers: getHeaders() });
+            fetchBudgets();
+        }
+
+        document.getElementById("askAiForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("askAiBtn");
+            btn.innerText = "Thinking...";
+            const res = await fetch(`${API_URL}/ask-ai`, {
+                method: "POST", headers: getHeaders(),
+                body: JSON.stringify({ question: document.getElementById("aiQuestion").value })
+            });
+            const data = await res.json();
+            btn.innerText = "Ask AI";
+            
+            if (res.ok) {
+                document.getElementById("aiChartContainer").classList.remove("hidden");
+                if (aiCustomChart) aiCustomChart.destroy();
+                aiCustomChart = new Chart(document.getElementById('aiCustomChart').getContext('2d'), {
+                    type: data.chart_type,
+                    data: { labels: data.labels, datasets: [{ label: 'Result', data: data.data, backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'] }] },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
         });
 
-        // Delete a Budget
-        async function deleteBudget(id) {
-            await fetch(`${API_URL}/budgets/${id}`, { method: "DELETE" });
-            fetchBudgets();
+        function drawChart(labels, data) {
+            if (myChart) myChart.destroy();
+            myChart = new Chart(document.getElementById('expenseChart').getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#1e3a8a', '#1d4ed8', '#3b82f6', '#93c5fd', '#0f766e', '#0d9488', '#2dd4bf'] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
         }
 
-        // Upload Statement & Process with AI
-        async function uploadStatement() {
-            const fileInput = document.getElementById('csvFile');
-            if (!fileInput.files[0]) {
-                alert("Please select a CSV file first!");
-                return;
-            }
-
-            document.getElementById('loading').classList.remove('hidden');
-            const btn = document.getElementById('uploadBtn');
-            btn.innerText = "Processing...";
-            btn.disabled = true;
-
-            const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-
-            try {
-                const res = await fetch(`${API_URL}/upload-statement`, { method: "POST", body: formData });
-                const data = await res.json();
-                
-                if (!res.ok) throw new Error(data.detail);
-
-                const tbody = document.getElementById('transactionList');
-                tbody.innerHTML = "";
-
-                const txns = data.transactions.transactions || data.transactions;
-                txns.forEach(txn => {
-                    const tr = document.createElement("tr");
-                    tr.className = "border-b hover:bg-gray-50";
-                    let typeColor = txn.type === 'credit' ? 'text-green-600' : 'text-red-600';
-                    tr.innerHTML = `
-                        <td class="p-3">${txn.date || 'N/A'}</td>
-                        <td class="p-3 font-medium">${txn.description}</td>
-                        <td class="p-3 uppercase text-xs font-bold ${typeColor}">${txn.type || 'debit'}</td>
-                        <td class="p-3 ${typeColor} font-bold">₹${txn.amount}</td>
-                        <td class="p-3">
-                            <span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-sm font-semibold">${txn.category}</span>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-                // Refresh charts and balances now that AI added new expenses!
-                fetchBudgets();
-
-            } catch (error) {
-                alert("Error processing statement: " + error.message);
-                console.error(error);
-            } finally {
-                document.getElementById('loading').classList.add('hidden');
-                btn.innerText = "Analyze with AI";
-                btn.disabled = false;
-            }
-        }
-
-        // Load dashboard on start
-        fetchBudgets();
+        // Initialize App
+        checkAuth();
     </script>
 </body>
 </html>
