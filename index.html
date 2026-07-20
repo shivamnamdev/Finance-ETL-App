@@ -28,6 +28,34 @@
         </div>
     </div>
 
+    <!-- DATA MANAGEMENT MODAL (Advanced Clear) -->
+    <div id="clearDataModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-96 transform transition-all">
+            <h3 class="text-xl font-bold text-red-600 mb-2">⚠️ Manage Data</h3>
+            <p class="text-sm text-gray-500 mb-6">Select the data you want to wipe for your account. This cannot be undone.</p>
+            
+            <div class="space-y-3 mb-6">
+                <label class="flex items-center space-x-3 p-2 border rounded hover:bg-red-50 cursor-pointer transition">
+                    <input type="checkbox" id="chkTransactions" checked class="w-4 h-4 text-red-600 rounded focus:ring-red-500">
+                    <span class="text-gray-700 font-medium">Bank Transactions (AI Synced)</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 border rounded hover:bg-red-50 cursor-pointer transition">
+                    <input type="checkbox" id="chkBudgets" class="w-4 h-4 text-red-600 rounded focus:ring-red-500">
+                    <span class="text-gray-700 font-medium">Planned Budgets</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 border rounded hover:bg-red-50 cursor-pointer transition">
+                    <input type="checkbox" id="chkAccounts" class="w-4 h-4 text-red-600 rounded focus:ring-red-500">
+                    <span class="text-gray-700 font-medium">Bank Accounts & Balances</span>
+                </label>
+            </div>
+            
+            <div class="flex justify-end gap-3">
+                <button onclick="closeClearModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium">Cancel</button>
+                <button onclick="confirmClearData()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold shadow-md">Wipe Selected</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- ========================================== -->
     <!-- MAIN DASHBOARD (Shows after login)         -->
     <!-- ========================================== -->
@@ -117,7 +145,9 @@
         <div class="mt-12 border-t pt-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-indigo-600">🤖 AI Bank Sync</h2>
-                <button onclick="clearTransactions()" class="text-red-500 border border-red-200 px-3 py-1 rounded bg-red-50 text-sm">🗑️ Wipe Synced Data</button>
+                <button onclick="openClearModal()" class="text-red-600 hover:text-white hover:bg-red-600 text-sm font-semibold flex items-center gap-1 border border-red-200 px-3 py-1 rounded-md bg-red-50 transition-colors">
+                    🧹 Manage / Clear Data
+                </button>
             </div>
             <div class="flex gap-4 items-center mb-6">
                 <input type="file" id="csvFile" accept=".csv" class="border p-2 rounded bg-white">
@@ -335,14 +365,50 @@
             } else { alert(data.detail); }
         }
 
-        async function clearTransactions() {
-            if(!confirm("Wipe all synced bank data?")) return;
-            await fetch(`${API_URL}/clear-data`, {
-                method: "POST", headers: getHeaders(),
-                body: JSON.stringify({transactions: true, budgets: false, accounts: false})
-            });
-            document.getElementById('transactionList').innerHTML = "";
-            fetchBudgets();
+        // --- DATA CLEARING MODAL LOGIC ---
+        function openClearModal() {
+            document.getElementById('clearDataModal').classList.remove('hidden');
+        }
+
+        function closeClearModal() {
+            document.getElementById('clearDataModal').classList.add('hidden');
+        }
+
+        async function confirmClearData() {
+            const clearTxns = document.getElementById('chkTransactions').checked;
+            const clearBudgets = document.getElementById('chkBudgets').checked;
+            const clearAccounts = document.getElementById('chkAccounts').checked;
+
+            if (!clearTxns && !clearBudgets && !clearAccounts) {
+                return alert("Please select at least one item to clear.");
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/clear-data`, {
+                    method: "POST",
+                    headers: getHeaders(), // Passes your secure login token!
+                    body: JSON.stringify({
+                        transactions: clearTxns,
+                        budgets: clearBudgets,
+                        accounts: clearAccounts
+                    })
+                });
+
+                if (!res.ok) throw new Error("Failed to clear data");
+                
+                closeClearModal();
+                
+                // Clear the table UI if transactions were wiped
+                if (clearTxns) {
+                    document.getElementById('transactionList').innerHTML = "";
+                }
+                
+                // Refresh the dashboard
+                fetchBudgets(); 
+                alert("✅ Selected data has been wiped!");
+            } catch (err) {
+                alert("Error clearing data: " + err.message);
+            }
         }
 
         async function deleteBudget(id) {
