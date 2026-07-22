@@ -1,0 +1,20 @@
+{
+    "active_provider": "gemini",
+    "providers": {
+        "gemini": {
+            "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+            "env_key": "GCP_API_KEY",
+            "model": "gemini-3.5-flash"
+        },
+        "groq": {
+            "base_url": "https://api.groq.com/openai/v1",
+            "env_key": "GROQ_API_KEY",
+            "model": "llama-3.1-8b-instant"
+        },
+        "openai": {
+            "base_url": "https://api.openai.com/v1",
+            "env_key": "OPENAI_API_KEY",
+            "model": "gpt-4o-mini"
+        }
+    }
+}
