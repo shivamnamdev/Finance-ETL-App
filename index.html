@@ -9,33 +9,59 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 h-screen flex flex-col">
 
-    <!-- ========================================== -->
-    <!-- LOGIN / REGISTER SCREEN (Shows if no token)-->
-    <!-- ========================================== -->
+    <!-- DATA MANAGEMENT MODAL (Advanced Clear) -->
+    <div id="clearDataModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-96 transform transition-all">
+            <h3 class="text-xl font-bold text-red-600 mb-2">⚠️ Manage Data</h3>
+            <p class="text-sm text-gray-500 mb-6">Select data to wipe for <strong id="wipeMonthLabel">this month</strong>. This cannot be undone.</p>
+            
+            <div class="space-y-3 mb-6">
+                <label class="flex items-center space-x-3 p-2 border rounded hover:bg-red-50 cursor-pointer transition">
+                    <input type="checkbox" id="chkTransactions" checked class="w-4 h-4 text-red-600 rounded focus:ring-red-500">
+                    <span class="text-gray-700 font-medium">Bank Transactions</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 border rounded hover:bg-red-50 cursor-pointer transition">
+                    <input type="checkbox" id="chkBudgets" class="w-4 h-4 text-red-600 rounded focus:ring-red-500">
+                    <span class="text-gray-700 font-medium">Planned Budgets</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 border rounded hover:bg-red-50 cursor-pointer transition">
+                    <input type="checkbox" id="chkAccounts" class="w-4 h-4 text-red-600 rounded focus:ring-red-500">
+                    <span class="text-gray-700 font-medium">Bank Accounts (All Months)</span>
+                </label>
+            </div>
+            
+            <div class="flex justify-end gap-3">
+                <button onclick="closeClearModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium">Cancel</button>
+                <button onclick="confirmClearData()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold shadow-md">Wipe Selected</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN / REGISTER SCREEN -->
     <div id="authScreen" class="fixed inset-0 bg-gray-100 z-50 flex items-center justify-center">
         <div class="bg-white p-8 rounded-xl shadow-lg w-96">
             <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">Finance OS</h1>
-            
             <div id="loginError" class="hidden bg-red-100 text-red-600 p-2 rounded mb-4 text-sm text-center"></div>
-
             <form id="authForm" class="flex flex-col gap-4">
                 <input type="text" id="username" placeholder="Username" required class="border p-3 rounded bg-gray-50 focus:ring-2 focus:ring-indigo-400 focus:outline-none">
                 <input type="password" id="password" placeholder="Password" required class="border p-3 rounded bg-gray-50 focus:ring-2 focus:ring-indigo-400 focus:outline-none">
-                
                 <button type="submit" id="loginBtn" class="bg-indigo-600 text-white font-bold py-3 rounded shadow hover:bg-indigo-700 transition">Log In</button>
                 <button type="button" onclick="registerUser()" id="registerBtn" class="bg-white text-indigo-600 border border-indigo-600 font-bold py-3 rounded shadow-sm hover:bg-indigo-50 transition">Create Account</button>
             </form>
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- MAIN DASHBOARD (Shows after login)         -->
-    <!-- ========================================== -->
+    <!-- MAIN DASHBOARD -->
     <div id="mainDashboard" class="hidden max-w-5xl mx-auto p-6 w-full pb-20">
         
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-indigo-600">📊 My Financial Dashboard</h1>
-            <button onclick="logout()" class="text-gray-500 hover:text-red-500 font-medium">Log Out</button>
+        <!-- HEADER WITH GLOBAL MONTH PICKER -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-indigo-100">
+            <h1 class="text-3xl font-bold text-indigo-600 mb-4 md:mb-0">📊 Finance OS</h1>
+            <div class="flex items-center gap-3">
+                <label class="font-bold text-gray-600 text-sm uppercase tracking-wide">Workspace:</label>
+                <input type="month" id="monthPicker" onchange="fetchDashboard()" class="border-2 border-indigo-200 text-indigo-700 font-bold p-2 rounded-lg focus:outline-none focus:border-indigo-500 cursor-pointer bg-indigo-50">
+                <button onclick="logout()" class="text-gray-400 hover:text-red-500 font-medium ml-4 border-l pl-4">Log Out</button>
+            </div>
         </div>
 
         <!-- SECTION 1: Cashflow Forecast Dashboard -->
@@ -80,7 +106,7 @@
         <!-- NEW SECTION: Ask the AI Analyst (BYOD) -->
         <div class="mb-10 bg-gradient-to-r from-indigo-900 to-purple-900 p-6 rounded-xl shadow-lg text-white">
             <h3 class="text-xl font-bold mb-2 flex items-center gap-2">✨ AI Data Analyst</h3>
-            <p class="text-indigo-200 text-sm mb-4">Ask any question about your finances to generate a custom chart.</p>
+            <p class="text-indigo-200 text-sm mb-4">Ask any question about your finances for <strong id="aiMonthLabel">this month</strong>.</p>
             <form id="askAiForm" class="flex gap-4 mb-6">
                 <input type="text" id="aiQuestion" placeholder="e.g., Show my top 5 highest expenses this month as a bar chart" required 
                     class="flex-1 border-none p-3 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 shadow-inner">
@@ -93,7 +119,7 @@
 
         <!-- SECTION 2: Define Your Budget -->
         <div class="mb-8 p-5 bg-gray-50 border rounded-xl shadow-sm">
-            <h3 class="text-lg font-bold text-gray-700 mb-4">📝 Define Your Budget</h3>
+            <h3 class="text-lg font-bold text-gray-700 mb-4">📝 Define Budget for <span id="budgetMonthLabel" class="text-indigo-600">this month</span></h3>
             <form id="budgetForm" class="flex gap-4 mb-4">
                 <select id="budgetType" class="border p-2 rounded bg-white text-gray-700 focus:ring-indigo-400">
                     <option value="expense">Expense</option>
@@ -117,7 +143,9 @@
         <div class="mt-12 border-t pt-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-indigo-600">🤖 AI Bank Sync</h2>
-                <button onclick="clearTransactions()" class="text-red-500 border border-red-200 px-3 py-1 rounded bg-red-50 text-sm">🗑️ Wipe Synced Data</button>
+                <button onclick="openClearModal()" class="text-red-600 hover:text-white hover:bg-red-600 text-sm font-semibold flex items-center gap-1 border border-red-200 px-3 py-1 rounded-md bg-red-50 transition-colors">
+                    🧹 Manage / Clear Data
+                </button>
             </div>
             <div class="flex gap-4 items-center mb-6">
                 <input type="file" id="csvFile" accept=".csv" class="border p-2 rounded bg-white">
@@ -145,10 +173,14 @@
     <!-- ALL JAVASCRIPT -->
     <script>
         const API_URL = window.location.origin + "/api";
-        let myChart = null;
-        let aiCustomChart = null;
+        let myChart = null, aiCustomChart = null;
 
-        // --- AUTHENTICATION LOGIC ---
+        // Auto-set the month picker to Current Month
+        const today = new Date();
+        document.getElementById("monthPicker").value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+        function getMonth() { return document.getElementById("monthPicker").value; }
+
         function getHeaders(isFormData = false) {
             const token = localStorage.getItem("token");
             const headers = { "Authorization": `Bearer ${token}` };
@@ -156,11 +188,12 @@
             return headers;
         }
 
+        // --- AUTH ---
         function checkAuth() {
             if (localStorage.getItem("token")) {
                 document.getElementById("authScreen").classList.add("hidden");
                 document.getElementById("mainDashboard").classList.remove("hidden");
-                fetchBudgets();
+                fetchDashboard();
             } else {
                 document.getElementById("authScreen").classList.remove("hidden");
                 document.getElementById("mainDashboard").classList.add("hidden");
@@ -171,40 +204,22 @@
             const u = document.getElementById("username").value;
             const p = document.getElementById("password").value;
             if (!u || !p) return alert("Enter username and password!");
-            
             try {
-                const res = await fetch(`${API_URL}/register`, {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username: u, password: p })
-                });
-                if (res.ok) {
-                    alert("Account Created! You can now log in.");
-                } else {
-                    const data = await res.json();
-                    alert(data.detail);
-                }
+                const res = await fetch(`${API_URL}/register`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u, password: p }) });
+                if (res.ok) alert("Account Created! You can now log in.");
+                else { const data = await res.json(); alert(data.detail); }
             } catch (err) { alert(err.message); }
         }
 
         document.getElementById("authForm").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const u = document.getElementById("username").value;
-            const p = document.getElementById("password").value;
-            
             const formData = new URLSearchParams();
-            formData.append("username", u);
-            formData.append("password", p);
-
+            formData.append("username", document.getElementById("username").value);
+            formData.append("password", document.getElementById("password").value);
             try {
-                const res = await fetch(`${API_URL}/login`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: formData
-                });
-                
+                const res = await fetch(`${API_URL}/login`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData });
                 if (res.ok) {
-                    const data = await res.json();
-                    localStorage.setItem("token", data.access_token);
+                    localStorage.setItem("token", (await res.json()).access_token);
                     document.getElementById("loginError").classList.add("hidden");
                     checkAuth();
                 } else {
@@ -214,26 +229,23 @@
             } catch (err) { alert(err.message); }
         });
 
-        function logout() {
-            localStorage.removeItem("token");
-            document.getElementById("authForm").reset();
-            checkAuth();
-        }
+        function logout() { localStorage.removeItem("token"); document.getElementById("authForm").reset(); checkAuth(); }
 
-        // --- DASHBOARD LOGIC (Now heavily secured!) ---
-        async function fetchBudgets() {
+        // --- MASTER DASHBOARD REFRESH ---
+        async function fetchDashboard() {
+            const m = getMonth();
+            document.getElementById("budgetMonthLabel").innerText = m;
+            document.getElementById("aiMonthLabel").innerText = m;
+            
             try {
-                // Fetch Accounts
                 const accRes = await fetch(`${API_URL}/accounts`, { headers: getHeaders() });
-                if (accRes.status === 401) return logout(); // Token expired
-                
+                if (accRes.status === 401) return logout(); // Kick to login if token expired
                 const accounts = await accRes.json();
                 document.getElementById("accountList").innerHTML = accounts.map(a => 
                     `<li class="flex justify-between border-b pb-1"><span>${a.name}</span> <span class="font-bold">₹${a.balance}</span></li>`
                 ).join("");
 
-                // Fetch Summary
-                const res = await fetch(`${API_URL}/summary`, { headers: getHeaders() });
+                const res = await fetch(`${API_URL}/summary?month_year=${m}`, { headers: getHeaders() });
                 const data = await res.json();
                 
                 const list = document.getElementById("budgetList");
@@ -241,10 +253,7 @@
                 const chartLabels = [], chartData = [];
                 
                 data.budgets.forEach(item => {
-                    if (item.type === 'expense' && item.spent > 0) {
-                        chartLabels.push(item.category);
-                        chartData.push(item.spent);
-                    }
+                    if (item.type === 'expense' && item.spent > 0) { chartLabels.push(item.category); chartData.push(item.spent); }
                     let p = Math.min((item.spent / item.planned) * 100, 100) || 0;
                     let isInc = item.type === 'income';
                     let barCol = isInc ? 'bg-blue-500' : (p >= 100 ? 'bg-red-500' : 'bg-green-500');
@@ -270,38 +279,37 @@
                 document.getElementById("dashExpense").innerText = `₹${data.actual_expense}`;
                 document.getElementById("dashExpenseSub").innerText = `Planned: ₹${data.planned_expense}`;
                 document.getElementById("dashCurrent").innerText = `₹${data.current_balance}`;
-                document.getElementById("dashProjected").innerText = `Projected: ₹${data.projected_balance}`;
+                document.getElementById("dashProjected").innerText = `Projected End: ₹${data.projected_balance}`;
 
                 drawChart(chartLabels, chartData);
+
+                // Fetch transactions for THIS month to populate the bottom table!
+                const txRes = await fetch(`${API_URL}/transactions?month_year=${m}`, { headers: getHeaders() });
+                const txns = await txRes.json();
+                document.getElementById('transactionList').innerHTML = txns.map(t => 
+                    `<tr class="border-b"><td class="p-2">${t.date}</td><td class="p-2">${t.description}</td><td class="p-2 uppercase text-xs font-bold text-${t.type=='credit'?'green':'red'}-600">${t.type}</td><td class="p-2 font-bold text-${t.type=='credit'?'green':'red'}-600">₹${t.amount}</td><td class="p-2"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-sm font-semibold">${t.category}</span></td></tr>`
+                ).join("");
+
             } catch (err) { console.error(err); }
         }
 
-        // --- ALL ACTIONS WITH TOKENS ---
+        // --- ACTIONS ---
         document.getElementById("budgetForm").addEventListener("submit", async (e) => {
             e.preventDefault();
             await fetch(`${API_URL}/budgets`, {
                 method: "POST", headers: getHeaders(),
-                body: JSON.stringify({
-                    category: document.getElementById("category").value,
-                    amount: parseFloat(document.getElementById("amount").value),
-                    type: document.getElementById("budgetType").value
-                })
+                body: JSON.stringify({ category: document.getElementById("category").value, amount: parseFloat(document.getElementById("amount").value), type: document.getElementById("budgetType").value, month_year: getMonth() })
             });
-            document.getElementById("budgetForm").reset();
-            fetchBudgets();
+            document.getElementById("budgetForm").reset(); fetchDashboard();
         });
 
         document.getElementById("accountForm").addEventListener("submit", async (e) => {
             e.preventDefault();
             await fetch(`${API_URL}/accounts`, {
                 method: "POST", headers: getHeaders(),
-                body: JSON.stringify({
-                    name: document.getElementById("accName").value,
-                    starting_balance: parseFloat(document.getElementById("accBalance").value)
-                })
+                body: JSON.stringify({ name: document.getElementById("accName").value, starting_balance: parseFloat(document.getElementById("accBalance").value) })
             });
-            document.getElementById("accountForm").reset();
-            fetchBudgets();
+            document.getElementById("accountForm").reset(); fetchDashboard();
         });
 
         async function uploadBudgetSheet() {
@@ -309,11 +317,10 @@
             if (!f) return alert("Select budget CSV!");
             document.getElementById('uploadBudgetBtn').innerText = "Uploading...";
             
-            const fd = new FormData(); fd.append("file", f);
+            const fd = new FormData(); fd.append("file", f); fd.append("month_year", getMonth());
             await fetch(`${API_URL}/upload-budget`, { method: "POST", headers: getHeaders(true), body: fd });
             
-            document.getElementById('uploadBudgetBtn').innerText = "Upload Budget";
-            fetchBudgets();
+            document.getElementById('uploadBudgetBtn').innerText = "Upload Budget"; fetchDashboard();
         }
 
         async function uploadStatement() {
@@ -321,63 +328,54 @@
             if (!f) return alert("Select Bank CSV!");
             
             document.getElementById('loading').classList.remove('hidden');
-            const fd = new FormData(); fd.append("file", f);
+            const fd = new FormData(); fd.append("file", f); fd.append("month_year", getMonth());
             
             const res = await fetch(`${API_URL}/upload-statement`, { method: "POST", headers: getHeaders(true), body: fd });
             const data = await res.json();
             
             document.getElementById('loading').classList.add('hidden');
-            if (res.ok) {
-                document.getElementById('transactionList').innerHTML = data.transactions.map(t => 
-                    `<tr class="border-b"><td class="p-2">${t.date}</td><td class="p-2">${t.description}</td><td class="p-2">${t.type}</td><td class="p-2 font-bold text-${t.type=='credit'?'green':'red'}-600">₹${t.amount}</td><td class="p-2">${t.category}</td></tr>`
-                ).join("");
-                fetchBudgets();
-            } else { alert(data.detail); }
+            if (res.ok) fetchDashboard(); else alert(data.detail);
         }
 
-        async function clearTransactions() {
-            if(!confirm("Wipe all synced bank data?")) return;
-            await fetch(`${API_URL}/clear-data`, {
-                method: "POST", headers: getHeaders(),
-                body: JSON.stringify({transactions: true, budgets: false, accounts: false})
-            });
-            document.getElementById('transactionList').innerHTML = "";
-            fetchBudgets();
-        }
-
-        async function deleteBudget(id) {
-            await fetch(`${API_URL}/budgets/${id}`, { method: "DELETE", headers: getHeaders() });
-            fetchBudgets();
-        }
+        async function deleteBudget(id) { await fetch(`${API_URL}/budgets/${id}`, { method: "DELETE", headers: getHeaders() }); fetchDashboard(); }
 
         document.getElementById("askAiForm").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const btn = document.getElementById("askAiBtn");
-            btn.innerText = "Thinking...";
+            const btn = document.getElementById("askAiBtn"); btn.innerText = "Thinking...";
             const res = await fetch(`${API_URL}/ask-ai`, {
                 method: "POST", headers: getHeaders(),
-                body: JSON.stringify({ question: document.getElementById("aiQuestion").value })
+                body: JSON.stringify({ question: document.getElementById("aiQuestion").value, month_year: getMonth() })
             });
-            const data = await res.json();
-            btn.innerText = "Ask AI";
-            
+            const data = await res.json(); btn.innerText = "Ask AI";
             if (res.ok) {
                 document.getElementById("aiChartContainer").classList.remove("hidden");
                 if (aiCustomChart) aiCustomChart.destroy();
                 aiCustomChart = new Chart(document.getElementById('aiCustomChart').getContext('2d'), {
                     type: data.chart_type,
-                    data: { labels: data.labels, datasets: [{ label: 'Result', data: data.data, backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'] }] },
+                    data: { labels: data.labels, datasets: [{ label: 'AI Result', data: data.data, backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'] }] },
                     options: { responsive: true, maintainAspectRatio: false }
                 });
             }
         });
 
+        // --- CLEAR DATA MODAL LOGIC ---
+        function openClearModal() { document.getElementById('wipeMonthLabel').innerText = getMonth(); document.getElementById('clearDataModal').classList.remove('hidden'); }
+        function closeClearModal() { document.getElementById('clearDataModal').classList.add('hidden'); }
+        async function confirmClearData() {
+            const tx = document.getElementById('chkTransactions').checked, b = document.getElementById('chkBudgets').checked, a = document.getElementById('chkAccounts').checked;
+            if (!tx && !b && !a) return alert("Select something to clear.");
+            await fetch(`${API_URL}/clear-data`, {
+                method: "POST", headers: getHeaders(),
+                body: JSON.stringify({ transactions: tx, budgets: b, accounts: a, month_year: getMonth() })
+            });
+            closeClearModal(); fetchDashboard(); alert("✅ Wiped!");
+        }
+
         function drawChart(labels, data) {
             if (myChart) myChart.destroy();
             myChart = new Chart(document.getElementById('expenseChart').getContext('2d'), {
-                type: 'doughnut',
-                data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#1e3a8a', '#1d4ed8', '#3b82f6', '#93c5fd', '#0f766e', '#0d9488', '#2dd4bf'] }] },
-                options: { responsive: true, maintainAspectRatio: false }
+                type: 'doughnut', data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#1e3a8a', '#1d4ed8', '#3b82f6', '#93c5fd', '#0f766e', '#0d9488', '#2dd4bf'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
             });
         }
 
